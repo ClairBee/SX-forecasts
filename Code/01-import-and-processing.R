@@ -113,7 +113,14 @@ saveRDS(obs, "./Data/Observations.rds")
 
 ####################################################################################################
 
+obs <- readRDS("./Data/Observations.rds")
 ens.mean <- apply(fc[,,,,2:51], c(1,2,3,4), mean)
+ens.mean.error <- sweep(ens.mean, 1:3, obs, "-")
+ens.rmse <- sqrt(apply(ens.mean.error^2, c(1, 4), mean))
+
+###### CODE ABOVE THIS LINE IS CHECKED & MATCHES SICHUN'S - SUB IN BELOW
+
+ens.mean <- apply(fc[,16:105,,,2:51], c(1,2,3,4), mean)
 
 ens.mean.error <- apply(sweep(ens.mean, 1:3, obs, "-"), c(1, 4), mean)
 ctrl.mean.error <- apply(sweep(fc[,,,,1], 1:3, obs, "-"), c(1, 4), mean)
@@ -131,26 +138,31 @@ suppressWarnings(ens.member.errors <- apply(sweep(fc[,,,,2:51], c(1:3, 5), obs, 
                       "temp.s" = "Temp (south)", "temp.n" = "Temp (north)",
                       "pc1" = "First PC", "pc2" = "Second PC", "pc3" = "Third PC")
         
+        yl <- range(ens.member.errors[element,,], ens.mean.error[element,], ctrl.mean.error[element,])
+            
         matplot(ens.member.errors[element,,], type = "l", col = adjustcolor("grey", alpha = 0.4),
-                lty = 1, main = ttl, xlab = "", ylab = "", ...)
+                lty = 1, main = ttl, xlab = "", ylab = "", ylim = yl)
         
         lines(ens.mean.error[element,])
         lines(ctrl.mean.error[element,], col = "blue3")
     }
     
-    par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
-    qplot("pc1"); qplot("pc2"); qplot("pc3")
-    qplot("temp.n"); qplot("temp.s")
-    
-    plot.new()
-    legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
-           legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
-    
-    mtext("Mean error at each forecast lead time", outer = TRUE, cex = 1)
+    pdf("./Plots/Mean error.pdf"); {
+        par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
+        qplot("pc1"); qplot("pc2"); qplot("pc3")
+        qplot("temp.n"); qplot("temp.s")
+        
+        plot.new()
+        legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
+               legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
+        
+        mtext("Mean error at each forecast lead time", outer = TRUE, cex = 1)
+    }; dev.off()
+
 }
 
 ctrl.rmse <- apply(sweep(fc[,,,,1], 1:3, obs, "-"), c(1, 4), function(err) sqrt(mean(err^2)))
-ens.rmse <- apply(sweep(ens.mean, 1:3, obs, "-"), c(1, 4), function(err) sqrt(mean(err^2)))
+ens.rmse2 <- apply(sweep(ens.mean, 1:3, obs, "-"), c(1, 4), function(err) sqrt(mean(err^2)))
 suppressWarnings(ens.member.rmse <- apply(sweep(fc[,,,,2:51], c(1:3, 5), obs, "-"), c(1, 4, 5), function(err) sqrt(mean(err^2))))
 
 # plot forecast rmse for all variables - compare to figure 5.2 in dissertation
@@ -163,22 +175,26 @@ suppressWarnings(ens.member.rmse <- apply(sweep(fc[,,,,2:51], c(1:3, 5), obs, "-
                       "temp.s" = "Temp (south)", "temp.n" = "Temp (north)",
                       "pc1" = "First PC", "pc2" = "Second PC", "pc3" = "Third PC")
         
+        yl <- range(ens.member.rmse[element,,], ens.rmse[element,], ctrl.rmse[element,])
         matplot(ens.member.rmse[element,,], type = "l", col = adjustcolor("grey", alpha = 0.4),
-                lty = 1, main = ttl, xlab = "", ylab = "", ...)
+                lty = 1, main = ttl, xlab = "", ylab = "", ylim = yl)
         
         lines(ens.rmse[element,])
         lines(ctrl.rmse[element,], col = "blue3")
     }
     
-    par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
-    qplot("pc1"); qplot("pc2"); qplot("pc3")
-    qplot("temp.n"); qplot("temp.s")
-    
-    plot.new()
-    legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
-           legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
-    
-    mtext("RMSE at each forecast lead time", outer = TRUE, cex = 1)
+    pdf("./Plots/RMSE.pdf"); {
+        par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
+        qplot("pc1"); qplot("pc2"); qplot("pc3")
+        qplot("temp.n"); qplot("temp.s")
+        
+        plot.new()
+        legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
+               legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
+        
+        mtext("RMSE at each forecast lead time", outer = TRUE, cex = 1)
+    }; dev.off()
+
 }
 
 ####################################################################################################

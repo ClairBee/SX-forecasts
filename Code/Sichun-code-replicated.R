@@ -283,3 +283,169 @@ RMSE.pert_TS_ECMWF <- sqrt(colMeans((TS.pert.leadtime.ensemblemean_ECMWF - TS_ob
 
 # ECMWF_RMSE vs spread.R                                                                        ####
 
+
+# For each lead time and variable,
+# Calculate the average variance of the ensemble and average variance for each lead time.
+#
+## PC1
+{
+    variance_PC1 <- matrix(nrow=630,ncol=14)
+    for (i in 1:14){
+        group <- rep(1:630, 50)
+        variance_PC1[,i] <- tapply(PC1.pert.leadtime_ECMWF[,i],group, var)
+    }
+    
+    averagevariance_PC1 <- colMeans(variance_PC1)
+    
+    Root_PC1_ECMWF <- sqrt(averagevariance_PC1)
+    
+    ###RMSE for mean of ensemble (should be divided into 50)
+    RMSE_PC1_ECMWF <- sqrt(colMeans((PC1.pert.leadtime.ensemblemean_ECMWF - PC1_obs)^2))
+}
+
+## PC2
+{
+    variance_PC2 <- matrix(nrow=630,ncol=14)
+    for (i in 1:14){
+        group <- rep(1:630, 50)
+        variance_PC2[,i] <- tapply(PC2.pert.leadtime_ECMWF[,i],group, var)
+    }
+    
+    averagevariance_PC2 <- colMeans(variance_PC2)
+    
+    Root_PC2_ECMWF <- sqrt(averagevariance_PC2)
+    
+    ###RMSE for mean of ensemble (should be divided into 50)
+    RMSE_PC2_ECMWF <- sqrt(colMeans((PC2.pert.leadtime.ensemblemean_ECMWF - PC2_obs)^2))
+}
+
+## PC3
+{
+    variance_PC3 <- matrix(nrow=630,ncol=14)
+    for (i in 1:14){
+        group <- rep(1:630, 50)
+        variance_PC3[,i] <- tapply(PC3.pert.leadtime_ECMWF[,i],group, var)
+    }
+    
+    averagevariance_PC3 <- colMeans(variance_PC3)
+    
+    Root_PC3_ECMWF <- sqrt(averagevariance_PC3)
+    
+    ###RMSE for mean of ensemble (should be divided into 50)
+    RMSE_PC3_ECMWF <- sqrt(colMeans((PC3.pert.leadtime.ensemblemean_ECMWF - PC3_obs)^2))
+}
+
+# temperature requires that index file again. Will assume that array calculation works for all variables.
+# temp - N
+{
+    northperttemp <- load.data("./Data/ECMWFpert_temp2m_7yr_north24hrave.rda")
+    
+    ## Temperature north
+    variance_TN <- matrix(nrow=630,ncol=14)
+    for (i in 1:630){
+        for (j in 1:14){
+            variance_TN[i,j] <- var(northperttemp[j*4+1,djf.index1(model_time1)[(i-1)%%90+1]-j,,ceiling(i/90)]-273.15)
+        }
+    }
+    
+    averagevariance_TN <- colMeans(variance_TN)
+    
+    Root_TN_ECMWF <- sqrt(averagevariance_TN)
+    
+    ###RMSE for mean of ensemble (should be divided into 50)
+    RMSE_TN_ECMWF <- sqrt(colMeans((TN.pert.leadtime.ensemblemean_ECMWF - TN_obs)^2))
+    
+}
+
+# temp - S
+{
+    southperttemp <- load.data("./Data/ECMWFpert_temp2m_7yr_south24hrave.rda")
+    
+    ## Temperature south
+    variance_TS <- matrix(nrow=630,ncol=14)
+    for (i in 1:630){
+        for (j in 1:14){
+            variance_TS[i,j] <- var(southperttemp[j*4+1,djf.index1(model_time1)[(i-1)%%90+1]-j,,ceiling(i/90)]-273.15)
+        }
+    }
+    
+    averagevariance_TS <- colMeans(variance_TS)
+    
+    Root_TS_ECMWF <- sqrt(averagevariance_TS)
+    
+    ###RMSE for mean of ensemble (should be divided into 50)
+    RMSE_TS_ECMWF <- sqrt(colMeans((TS.pert.leadtime.ensemblemean_ECMWF - TS_obs)^2))
+    
+}
+
+# check against array calculation
+daily.var <- array(apply(array(fc[, 16:105,,2:15,2:51], dim = c(5, 630, 14, 50)), 1:3, var),
+                   dim = c(5, 90, 7, 14), 
+                   dimnames = list(dimnames(fc)[[1]], 1:90, dimnames(fc)[[3]], 1:14))
+
+average.var <- apply(daily.var, c(1, 4), mean)
+root.mean.var <- sqrt(average.var)
+
+obs <- readRDS("./Data/Observations.rds")
+ens.mean <- apply(fc[,16:105,,2:15,2:51], c(1,2,3,4), mean)
+ens.mean.error <- sweep(ens.mean, 1:3, obs, "-")
+ens.rmse <- sqrt(apply(ens.mean.error^2, c(1, 4), mean))
+
+
+{
+    # check that everything stacks up
+    all(daily.var["pc1",,,] == array(variance_PC1, dim = dim(daily.var[1,,,])))     # T
+    all(daily.var["pc2",,,] == array(variance_PC2, dim = dim(daily.var[1,,,])))     # T
+    all(daily.var["pc3",,,] == array(variance_PC3, dim = dim(daily.var[1,,,])))     # T
+    all(daily.var["temp.n",,,] == array(variance_temp.n, dim = dim(daily.var[1,,,])))   # can't check
+    all(daily.var["temp.s",,,] == array(variance_temp.s, dim = dim(daily.var[1,,,])))   # can't check
+    
+    all(average.var["pc1",] == averagevariance_PC1)
+    all(average.var["pc2",] == averagevariance_PC2)
+    all(average.var["pc3",] == averagevariance_PC3)
+    
+    all(root.mean.var["pc1",] == Root_PC1_ECMWF)
+    all(root.mean.var["pc2",] == Root_PC2_ECMWF)
+    all(root.mean.var["pc3",] == Root_PC3_ECMWF)
+    
+    all(ens.mean["pc1",,,] == array(PC1.pert.leadtime.ensemblemean_ECMWF, dim = c(90, 7, 14)))
+    all(ens.mean.error["pc1",,,] == array(PC1.pert.leadtime.ensemblemean_ECMWF - PC1_obs, dim = c(90,7, 14)))
+ 
+    all(ens.rmse["pc1",] == RMSE_PC1_ECMWF) 
+    all(ens.rmse["pc2",] == RMSE_PC2_ECMWF)   
+    all(ens.rmse["pc3",] == RMSE_PC3_ECMWF)   
+}
+
+plot(c(1:14),RMSE_PC1_ECMWF,xlab='lead time(day)',ylab='RMSE vs Spread',type='l',col='red',
+     main='(c) PC1 of Pressure',ylim = c(0,0.9))
+lines(c(1:14),Root_PC1_ECMWF,lty=2,col='blue')
+axis(1,at=c(1:14))
+abline(h=0,col="grey",lty=2,lwd=1)
+legend(5,0.15,legend=c('RMSE of Ensemble Mean','Average Ensemble Spread'),col=c('red','blue'),
+       lty=c(1,2),cex = 0.7,bty = 'n')
+
+{
+    qplot <- function(element, ...) {
+        ttl <- switch(element,
+                      "temp.s" = "Temp (south)", "temp.n" = "Temp (north)",
+                      "pc1" = "First PC", "pc2" = "Second PC", "pc3" = "Third PC")
+        
+        yl <- range(ens.rmse[element,], root.mean.var[element,]) 
+        
+        plot(ens.rmse[element,], type = "l", col = "red", lty = 1, main = ttl, xlab = "", ylab = "", ylim = yl)
+        lines(root.mean.var[element,], col = "blue3", lty = 2)
+    }
+    
+    pdf("./Plots/RMSE-vs-spread.pdf"); {
+        par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
+        qplot("pc1"); qplot("pc2"); qplot("pc3")
+        qplot("temp.n"); qplot("temp.s")
+        
+        plot.new()
+        legend("left", lty = c(1,2), col = c("red", "blue"), bty = "n", cex = 1.1,
+               legend = c("RMSE of ensemble mean", "Ensemble spread"))
+        
+        mtext("RMSE vs spread at each forecast lead time", outer = TRUE, cex = 1)
+    }; dev.off()
+
+}
