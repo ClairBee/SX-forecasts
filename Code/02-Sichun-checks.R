@@ -1,14 +1,11 @@
 
 # suspect problem in data import is to do with forecast leadtime. Look into this....
 
-
 library("CB.Misc"); library("SX.weather")
 
-load.all()
 
 # STILL TO DO...
 
-#   - create checks below of my data vs all variables used
 #   - once checks are included here, tidy & rename '01-import...' to include only data import (sourceable)
 
 #   - don't forget CompStat homework still to do (independence sampler)
@@ -17,73 +14,7 @@ load.all()
 
 
 # calculation used is for RMSE of ensemble mean - not mean RMSE of ensemble
-
-####################################################################################################
-
-# PLOTTING FUNCTIONS                                                                            ####
-
-plot.forecast.errors <- function(model) {
-    
-    org.par <- par()
-    
-    # add ensemble mean to model
-    m.plus <- abind("em" = apply(model[,,,,-1], 1:4, mean), model, along = 5)
-    
-    errors <- forecast.errors(m.plus)
-    mean.errors <- apply(errors, c(1, 4, 5), mean)
-
-    par(mfrow = c(2,3), mar = c(2,2,3,1), oma = c(0,0,2,0))
-    invisible(sapply(dimnames(mean.errors)[[1]][c(3:5, 1:2)], function(varbl) {
-        
-        matplot(mean.errors[varbl,,dim(mean.errors)[[3]]:1], type = "l", lty = 1,
-                col = c(rep(adjustcolor("grey", alpha = 0.5), dim(mean.errors)[[3]]-2), "blue", "black"),
-                xlab = "", ylab = "", main = varbl)
-    }))
-    
-    # add legend in final box
-    plot.new()
-    legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
-           legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
-
-    # add overall title
-    mtext(paste0(toupper(toString(as.list(match.call())$model)), " mean error at each forecast lead time"),
-          outer = TRUE, cex = 1)
-    
-    # reset device parameters to original values
-    par(mfrow = org.par$mfrow, mar = org.par$mar, oma = org.par$oma)
-}
-
-plot.forecast.rmse <- function(model) {
-    
-    org.par <- par()
-    
-    # add ensemble mean to model
-    m.plus <- abind("em" = apply(model[,,,,-1], 1:4, mean), model, along = 5)
-    
-    rmse <- forecast.rmse(m.plus)
-    rmse <- abind("em2" = apply(rmse[,,-c(1:2)], 1:2, mean), rmse)
-    
-    par(mfrow = c(2,3), mar = c(2,2,3,1), oma = c(0,0,2,0))
-    invisible(sapply(dimnames(rmse)[[1]][c(3:5, 1:2)], function(varbl) {
-        
-        matplot(rmse[varbl,,dim(rmse)[[3]]:1], type = "l", lty = 1,
-                col = c(rep(adjustcolor("grey", alpha = 0.5), dim(rmse)[[3]]-3), "blue", "black", "red"),
-                xlab = "", ylab = "", main = varbl)
-    }))
-    
-    # add legend in final box
-    plot.new()
-    legend("left", lty = 1, col = c("red", "blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
-           legend = c("Mean of perturbed RMSE", "Control forecast", "RMSE of perturbed mean", "Perturbed members"))
-    
-    # add overall title
-    mtext(paste0(toupper(toString(as.list(match.call())$model)), " RMSE at each forecast lead time"),
-          outer = TRUE, cex = 1)
-    
-    # reset device parameters to original values
-    par(mfrow = org.par$mfrow, mar = org.par$mar, oma = org.par$oma)
-}
-
+# check RMSE of all observations (no averaging until the very end) 
 
 ####################################################################################################
 
@@ -98,7 +29,9 @@ plot.forecast.rmse(ncep)
 plot.forecast.rmse(ukmo)
 
 # RMSE vs ensemble spread
-
+plot.rmse.spread(ecmwf)
+plot.rmse.spread(ncep)
+plot.rmse.spread(ukmo)
 
 ####################################################################################################
 
