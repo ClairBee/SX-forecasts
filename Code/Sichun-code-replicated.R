@@ -117,25 +117,25 @@ pert_obs.all <- data.frame(year = rep(formatC(c(8:14), width = 2, flag = "0"), e
 
 ####################################################################################################
 
-# ECMWF_Mean error and RMSE.E                                                                   ####
+# ECMWF_Mean error and RMSE.R                                                                   ####
 
 # variable names retained, method of obtaining them corrected
 
-fc <- readRDS("./Data/Forecasts.rds")
+fc <- readRDS("./Data/ECMWF-forecasts.rds")[,16:105,,2:15,]
 
 # The control forecasts for 14 lead times and 630 days (90 winter days * 7 years).
-PC1.ctrl.leadtime_ECMWF <- array(fc["pc1",16:105,,2:15,"c"], dim = c(90 * 7, 14))
-PC2.ctrl.leadtime_ECMWF <- array(fc["pc2",16:105,,2:15,"c"], dim = c(90 * 7, 14))
-PC3.ctrl.leadtime_ECMWF <- array(fc["pc3",16:105,,2:15,"c"], dim = c(90 * 7, 14))
-TN.ctrl.leadtime_ECMWF <- array(fc["temp.n",16:105,,2:15,"c"], dim = c(90 * 7, 14))
-TS.ctrl.leadtime_ECMWF <- array(fc["temp.s",16:105,,2:15,"c"], dim = c(90 * 7, 14))
+PC1.ctrl.leadtime_ECMWF <- array(fc["pc1",,,,"c"], dim = c(90 * 7, 14))
+PC2.ctrl.leadtime_ECMWF <- array(fc["pc2",,,,"c"], dim = c(90 * 7, 14))
+PC3.ctrl.leadtime_ECMWF <- array(fc["pc3",,,,"c"], dim = c(90 * 7, 14))
+TN.ctrl.leadtime_ECMWF <- array(fc["temp.n",,,,"c"], dim = c(90 * 7, 14))
+TS.ctrl.leadtime_ECMWF <- array(fc["temp.s",,,,"c"], dim = c(90 * 7, 14))
 
 # The perturbed forecasts for 14 lead times and 630 days.
-PC1.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["pc1",16:105,,2:51, 2:15], dim = c(90 * 7 * 50, 14))
-PC2.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["pc2",16:105,,2:51, 2:15], dim = c(90 * 7 * 50, 14))
-PC3.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["pc3",16:105,,2:51, 2:15], dim = c(90 * 7 * 50, 14))
-TN.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["temp.n",16:105,,2:51, 2:15], dim = c(90 * 7 * 50, 14))
-TS.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["temp.s",16:105,,2:51, 2:15], dim = c(90 * 7 * 50, 14))
+PC1.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["pc1",,,2:51,], dim = c(90 * 7 * 50, 14))
+PC2.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["pc2",,,2:51,], dim = c(90 * 7 * 50, 14))
+PC3.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["pc3",,,2:51,], dim = c(90 * 7 * 50, 14))
+TN.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["temp.n",,,2:51,], dim = c(90 * 7 * 50, 14))
+TS.pert.leadtime_ECMWF <- array(aperm(fc, c(1,2,3,5,4))["temp.s",,,2:51,], dim = c(90 * 7 * 50, 14))
 
 
 #===========================================================================================
@@ -225,6 +225,7 @@ TS_obs <- c(load.data("./Data/ERAint_temp2m_36yr_south24hrave.rda")[seq(3,360,4)
     qplot("PC1", ylim = c(-0.22,0)); qplot("PC2", ylim = c(0.1,0.25))
 
 }
+
 
 #===========================================================================================
 # root mean squared error
@@ -379,7 +380,7 @@ RMSE.pert_TS_ECMWF <- sqrt(colMeans((TS.pert.leadtime.ensemblemean_ECMWF - TS_ob
 }
 
 # check against array calculation
-daily.var <- array(apply(array(fc[, 16:105,,2:15,2:51], dim = c(5, 630, 14, 50)), 1:3, var),
+daily.var <- array(apply(array(fc[, ,,,-1], dim = c(5, 630, 14, 50)), 1:3, var),
                    dim = c(5, 90, 7, 14), 
                    dimnames = list(dimnames(fc)[[1]], 1:90, dimnames(fc)[[3]], 1:14))
 
@@ -387,18 +388,18 @@ average.var <- apply(daily.var, c(1, 4), mean)
 root.mean.var <- sqrt(average.var)
 
 obs <- readRDS("./Data/Observations.rds")
-ens.mean <- apply(fc[,16:105,,2:15,2:51], c(1,2,3,4), mean)
+ens.mean <- apply(fc[,,,,-1], c(1,2,3,4), mean)
 ens.mean.error <- sweep(ens.mean, 1:3, obs, "-")
 ens.rmse <- sqrt(apply(ens.mean.error^2, c(1, 4), mean))
 
-
+# check that everything stacks up
 {
     # check that everything stacks up
     all(daily.var["pc1",,,] == array(variance_PC1, dim = dim(daily.var[1,,,])))     # T
     all(daily.var["pc2",,,] == array(variance_PC2, dim = dim(daily.var[1,,,])))     # T
     all(daily.var["pc3",,,] == array(variance_PC3, dim = dim(daily.var[1,,,])))     # T
-    all(daily.var["temp.n",,,] == array(variance_temp.n, dim = dim(daily.var[1,,,])))   # can't check
-    all(daily.var["temp.s",,,] == array(variance_temp.s, dim = dim(daily.var[1,,,])))   # can't check
+   # all(daily.var["temp.n",,,] == array(variance_temp.n, dim = dim(daily.var[1,,,])))   # can't check
+   # all(daily.var["temp.s",,,] == array(variance_temp.s, dim = dim(daily.var[1,,,])))   # can't check
     
     all(average.var["pc1",] == averagevariance_PC1)
     all(average.var["pc2",] == averagevariance_PC2)
@@ -416,6 +417,15 @@ ens.rmse <- sqrt(apply(ens.mean.error^2, c(1, 4), mean))
     all(ens.rmse["pc3",] == RMSE_PC3_ECMWF)   
 }
 
+# and using functions to calculate directly...
+{
+    spread <- ensemble.spread(fc[,,,,-1])
+        all(spread["pc1",] == Root_PC1_ECMWF)
+        all(spread["pc2",] == Root_PC2_ECMWF)
+        all(spread["pc3",] == Root_PC3_ECMWF)
+        
+    
+}
 plot(c(1:14),RMSE_PC1_ECMWF,xlab='lead time(day)',ylab='RMSE vs Spread',type='l',col='red',
      main='(c) PC1 of Pressure',ylim = c(0,0.9))
 lines(c(1:14),Root_PC1_ECMWF,lty=2,col='blue')
@@ -424,6 +434,7 @@ abline(h=0,col="grey",lty=2,lwd=1)
 legend(5,0.15,legend=c('RMSE of Ensemble Mean','Average Ensemble Spread'),col=c('red','blue'),
        lty=c(1,2),cex = 0.7,bty = 'n')
 
+# plot RMSE vs spread for comparison to dissertation
 {
     qplot <- function(element, ...) {
         ttl <- switch(element,
@@ -449,3 +460,18 @@ legend(5,0.15,legend=c('RMSE of Ensemble Mean','Average Ensemble Spread'),col=c(
     }; dev.off()
 
 }
+
+####################################################################################################
+
+# NCEP_loading.R                                                                                ####
+
+control_ts <- load.data("./Data/NCEPctrl_mslp_timeseries.rda")
+ensemble_ts <- load.data("./Data/NCEPpert_mslp_timeseries.rda")
+
+# loading the temperature of south and north UK respectively.
+northctrltemp <- load.data("./Data/NCEPctrl_temp2m_7yr_north24hrave.rda")
+southctrltemp <- load.data("./Data/NCEPctrl_temp2m_7yr_south24hrave.rda")
+
+# still no files for start & lead times. Create data manually for now
+
+####################################################################################################
