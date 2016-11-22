@@ -12,7 +12,7 @@ load("./Data/ECMWFpert_timeseries.rda")
 
 # loading the temperature of south and north UK respectively.
 load("./Data/ECMWFctrl_temp2m_7yr_south24hrave.rda")
-xsouthctrltemp <- model_var
+southctrltemp <- model_var
 load("./Data/ECMWFctrl_temp2m_7yr_north24hrave.rda")
 northctrltemp <- model_var
 
@@ -24,6 +24,14 @@ load("./Data/ECMWF_europe_leadtime.rda")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# added for compatibility
+{
+    model_time <- model_time[,1:7]
+    model_time1 <- model_time1[,1:7]
+}
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Functions
 
 # Data just for December, January and February (DJF) in a single year.(31 + 31 + 28 = 90 days)

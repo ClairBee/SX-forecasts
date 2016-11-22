@@ -1,9 +1,6 @@
 
 library("CB.Misc"); library("SX.weather")
-
 kc <- 273.15
-
-load.all()
 
 # missing: UKMOctrl_mslp_timeseries.rda
 
@@ -11,7 +8,6 @@ load.all()
 
 # NOTES                                                                                         ####
 
-# checked alignment of forecast & obs visually - data appear to be aligned (days 16:105)
 # why do perturbed & control forecasts of principal components start in different places?
 
 
@@ -73,24 +69,24 @@ saveRDS(fc[,,,,], "./Data/ECMWF-forecasts.rds")
 
 # perturbed ensemble has an offset from the control forecast. Why?
 {
-    pc.qplot <- function(n, lt = 0) {
-        diff <- sweep(fc.mslp.pert[,n, 4 * lt + 1,], 1, fc.mslp.ctrl[1:735,n,4 * lt + 1], "-")
-        matplot(diff, pch = 20, cex = 0.4, col = adjustcolor("darkblue", alpha = 0.4),
-                main = paste0("PC", n), ylim = c(-0.05, 0.15))
-        abline(h = 0, lwd = 2)
-        invisible(apply(diff, 2, function(mm) abline(line(mm), col = adjustcolor("gold", alpha = 0.6))))
-    }
-    
-    temp.qplot <- function(a, lt = 0) {
-        diff <- switch(a,
-                       "n" = array(aperm(sweep(fc.temp.n.pert[4 * lt + 1,,,], c(1,3), fc.temp.n.ctrl[4 * lt + 1,,], "-"), c(1,3,2)), dim = c(735,50)),
-                       "s" = array(aperm(sweep(fc.temp.s.pert[4 * lt + 1,,,], c(1,3), fc.temp.s.ctrl[4 * lt + 1,,], "-"), c(1,3,2)), dim = c(735,50)))
-        
-        matplot(diff, pch = 20, cex = 0.4, col = adjustcolor("darkblue", alpha = 0.4),
-                main = paste0("Temp - ", toupper(a)), ylim = c(-1.5, 1.5))
-        invisible(apply(diff, 2, function(mm) abline(line(mm), col = adjustcolor("gold", alpha = 0.6))))
-        abline(h = 0, lwd = 2)
-    }
+#    pc.qplot <- function(n, lt = 0) {
+#        diff <- sweep(fc.mslp.pert[,n, 4 * lt + 1,], 1, fc.mslp.ctrl[1:735,n,4 * lt + 1], "-")
+#        matplot(diff, pch = 20, cex = 0.4, col = adjustcolor("darkblue", alpha = 0.4),
+#                main = paste0("PC", n), ylim = c(-0.05, 0.15))
+#        abline(h = 0, lwd = 2)
+#        invisible(apply(diff, 2, function(mm) abline(line(mm), col = adjustcolor("gold", alpha = 0.6))))
+#    }
+#    
+#    temp.qplot <- function(a, lt = 0) {
+#        diff <- switch(a,
+#                       "n" = array(aperm(sweep(fc.temp.n.pert[4 * lt + 1,,,], c(1,3), fc.temp.n.ctrl[4 * lt + 1,,], "-"), c(1,3,2)), dim = c(735,50)),
+#                       "s" = array(aperm(sweep(fc.temp.s.pert[4 * lt + 1,,,], c(1,3), fc.temp.s.ctrl[4 * lt + 1,,], "-"), c(1,3,2)), dim = c(735,50)))
+#        
+#        matplot(diff, pch = 20, cex = 0.4, col = adjustcolor("darkblue", alpha = 0.4),
+#                main = paste0("Temp - ", toupper(a)), ylim = c(-1.5, 1.5))
+#        invisible(apply(diff, 2, function(mm) abline(line(mm), col = adjustcolor("gold", alpha = 0.6))))
+#        abline(h = 0, lwd = 2)
+#    }
     
     pdf("./Plots/Perturbation-offset.pdf"); {
         par(mfrow = c(2,3), oma = c(0,0,2,0), mar = c(3, 3, 3, 1))
@@ -132,20 +128,19 @@ obs <- array(dim = c(5, 90, 7), dimnames = list(dimnames(fc)[[1]], c(1:90), dimn
 
 # check that these are properly aligned with forecasts
 {
-    pdf("./Plots/ECMWF-forecast-obs-alignment.pdf"); {
-        par(mfrow = c(5, 7), mar = c(0,0,0,0), lwd = 3, oma = c(0,0,3,0))
-        
-        invisible(sapply(1:5, function(varbl) {
-            invisible(sapply(formatC(8:14, width = 2, flag = "0"), function(yr) {
-                plot(obs[varbl,,yr], type = "l", xlab = "", ylab = "", yaxt = "none", xaxt = "none", lwd = 1)
-                lines(fc[varbl,16:105,yr,"0","c"], col = "red", lwd = 1)
-            }))
-        }))
-        mtext("Check alignment of ECMWF control forecast (red) & observations (black)", outer = TRUE)
-    }; dev.off()
+#    pdf("./Plots/ECMWF-forecast-obs-alignment.pdf"); {
+#        par(mfrow = c(5, 7), mar = c(0,0,0,0), lwd = 3, oma = c(0,0,3,0))
+#        
+#        invisible(sapply(1:5, function(varbl) {
+#            invisible(sapply(formatC(8:14, width = 2, flag = "0"), function(yr) {
+#                plot(obs[varbl,,yr], type = "l", xlab = "", ylab = "", yaxt = "none", xaxt = "none", lwd = 1)
+#                lines(fc[varbl,16:105,yr,"0","c"], col = "red", lwd = 1)
+#            }))
+#        }))
+#        mtext("Check alignment of ECMWF control forecast (red) & observations (black)", outer = TRUE)
+#    }; dev.off()
 
 }
-# control forecast from days 16:105 seems to be matched to observations. Assume dates properly aligned.
 
 saveRDS(obs, "./Data/Observations.rds")
 
@@ -230,7 +225,7 @@ ukmo <- array(dim = c(5, 105, 7, 15, 24),
                               c(1:105), formatC(8:14, width = 2, flag = "0"), c(0:14),
                               c("c",1:23)))
 
-# mslp control forecast - DOES NOT EXIST
+# mslp control forecast
 {
     fc.mslp.ctrl <- load.data("./Data/UKMOctrl_mslp_timeseries.rda")
     invisible(sapply(0:14, function(i) {
@@ -277,128 +272,19 @@ ukmo <- array(dim = c(5, 105, 7, 15, 24),
 
 # check that forecasts & observations are properly aligned
 {
-    obs <- readRDS("./Data/Observations.rds")
-    
-    pdf("./Plots/UKMO-forecast-obs-alignment.pdf"); {
-        par(mfrow = c(5, 7), mar = c(0,0,0,0), lwd = 3, oma = c(0,0,3,0))
-        
-        invisible(sapply(1:5, function(varbl) {
-            invisible(sapply(formatC(8:14, width = 2, flag = "0"), function(yr) {
-                plot(obs[varbl,,yr], type = "l", xlab = "", ylab = "", yaxt = "none", xaxt = "none", lwd = 1)
-                lines(ukmo[varbl,16:105,yr,"0","c"], col = "red", lwd = 1)
-            }))
-        }))
-        mtext("Check alignment of UKMO control forecast (red) & observations (black)", outer = TRUE)
-    }; dev.off()
+#    obs <- readRDS("./Data/Observations.rds")
+#    
+#    pdf("./Plots/UKMO-forecast-obs-alignment.pdf"); {
+#        par(mfrow = c(5, 7), mar = c(0,0,0,0), lwd = 3, oma = c(0,0,3,0))
+#        
+#        invisible(sapply(1:5, function(varbl) {
+#            invisible(sapply(formatC(8:14, width = 2, flag = "0"), function(yr) {
+#                plot(obs[varbl,,yr], type = "l", xlab = "", ylab = "", yaxt = "none", xaxt = "none", lwd = 1)
+#                lines(ukmo[varbl,16:105,yr,"0","c"], col = "red", lwd = 1)
+#            }))
+#        }))
+#        mtext("Check alignment of UKMO control forecast (red) & observations (black)", outer = TRUE)
+#    }; dev.off()
 }
 
 saveRDS(ukmo, "./Data/UKMO-forecasts.rds")
-####################################################################################################
-
-# CALCULATE MEAN ERROR, RMSE                                                                    ####
-
-load.all()
-fc <- fc[,,,2:15,]
-
-ens.mean <- apply(fc[,,,,-1], c(1,2,3,4), mean)
-ens.mean.error <- sweep(ens.mean, 1:3, obs, "-")
-suppressWarnings(ens.member.errors <- apply(sweep(fc[,,,,-1], c(1:3, 5), obs, "-"), c(1, 4, 5), mean))
-
-ens.rmse <- sqrt(apply(ens.mean.error^2, c(1, 4), mean))
-ctrl.mean.error <- apply(sweep(fc[,,,,1], 1:3, obs, "-"), c(1, 4), mean)
-
-daily.var <- array(apply(array(fc[,,,,-1], dim = c(5, 630, 14, 50)), 1:3, var),
-                   dim = c(5, 90, 7, 14), 
-                   dimnames = list(dimnames(fc)[[1]], 1:90, dimnames(fc)[[3]], 1:14))
-
-average.var <- apply(daily.var, c(1, 4), mean)
-root.mean.var <- sqrt(average.var)
-
-
-# plot forecast errors for all variables - compare to figure 5.1 in dissertation
-    # plots are similar, but not identical (particularly after 10 days?)
-    # need to get date reference file in order to investigate further.
-{
-    # quick plotting function
-    qplot <- function(element, ...) {
-        
-        ttl <- switch(element,
-                      "temp.s" = "Temp (south)", "temp.n" = "Temp (north)",
-                      "pc1" = "First PC", "pc2" = "Second PC", "pc3" = "Third PC")
-        
-        yl <- range(ens.member.errors[element,,], ens.mean.error[element,], ctrl.mean.error[element,])
-            
-        matplot(ens.member.errors[element,,], type = "l", col = adjustcolor("grey", alpha = 0.4),
-                lty = 1, main = ttl, xlab = "", ylab = "", ylim = yl)
-        
-        lines(ens.mean.error[element,])
-        lines(ctrl.mean.error[element,], col = "blue3")
-    }
-    
-    pdf("./Plots/Mean error.pdf"); {
-        par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
-        qplot("pc1"); qplot("pc2"); qplot("pc3")
-        qplot("temp.n"); qplot("temp.s")
-        
-        plot.new()
-        legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
-               legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
-        
-        mtext("Mean error at each forecast lead time", outer = TRUE, cex = 1)
-    }; dev.off()
-
-}
-
-ctrl.rmse <- apply(sweep(fc[,,,,1], 1:3, obs, "-"), c(1, 4), function(err) sqrt(mean(err^2)))
-suppressWarnings(ens.member.rmse <- apply(sweep(fc[,,,,2:51], c(1:3, 5), obs, "-"), c(1, 4, 5), function(err) sqrt(mean(err^2))))
-
-# plot forecast rmse for all variables - compare to figure 5.2 in dissertation
-    # 
-{
-    # quick plotting function
-    qplot <- function(element, ...) {
-        
-        ttl <- switch(element,
-                      "temp.s" = "Temp (south)", "temp.n" = "Temp (north)",
-                      "pc1" = "First PC", "pc2" = "Second PC", "pc3" = "Third PC")
-        
-        yl <- range(ens.member.rmse[element,,], ens.rmse[element,], ctrl.rmse[element,])
-        matplot(ens.member.rmse[element,,], type = "l", col = adjustcolor("grey", alpha = 0.4),
-                lty = 1, main = ttl, xlab = "", ylab = "", ylim = yl)
-        
-        lines(ens.rmse[element,])
-        lines(ctrl.rmse[element,], col = "blue3")
-    }
-    
-    pdf("./Plots/RMSE.pdf"); {
-        par(mfrow = c(2,3), oma = c(0.5, 0.5, 2, 0.5), mar = c(2,2,3,1))
-        qplot("pc1"); qplot("pc2"); qplot("pc3")
-        qplot("temp.n"); qplot("temp.s")
-        
-        plot.new()
-        legend("left", lty = 1, col = c("blue", "black", adjustcolor("grey", alpha = 0.5)), bty = "n", cex = 1.1,
-               legend = c("Control forecast", "Perturbed mean", "Perturbed members"))
-        
-        mtext("RMSE at each forecast lead time", outer = TRUE, cex = 1)
-    }; dev.off()
-
-}
-
-####################################################################################################
-
-# CASE STUDY: CONTROL FORECAST FOR TEMP (NORTH), 2008                                           ####
-
-plot(obs["temp.n",,"08"], type = "l", lwd = 2, ylab = "", xlab = "", main = "Obs vs control forecast")
-lines(fc["temp.n", , "08", "0", "c"], col = "blue")
-
-error <- fc["temp.n", , , "0", "c"] - obs["temp.n",,]
-
-matplot(error, type = "l", lty = 1, main = "Same-day control forecast error")
-apply(error, 2, mean)
-mean(error)
-ctrl.mean.error["temp.n", "0"]
-
-sqrt(mean(error^2))
-ctrl.rmse["temp.n", "0"]
-
-# same result. Don't think this is a problem with my calculations.
