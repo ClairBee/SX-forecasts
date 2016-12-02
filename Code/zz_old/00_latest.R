@@ -18,6 +18,8 @@ library("CB.Misc"); library("SX.weather")
 
 # do we need to distinguish between controls and perturbations?
 
+# plot model trajectories
+
 super <- superensemble(list(ecmwf, ncep, ukmo))
 
 s.err <- forecast.errors(super)
@@ -106,6 +108,7 @@ pdf("./Plots/Superensemble RMSE.pdf"); {
 #----------------------------------------------------------------------------------------
 
 # spread
+super <- superensemble()
 ens.spread <- ensemble.spread(super[,,,,-(1:3)])
 
 member.spread <- abind(invisible(sapply(1:3,
@@ -116,7 +119,7 @@ member.spread <- abind(invisible(sapply(1:3,
 pdf("./Plots/Superensemble RMSE vs spread.pdf"); {
     par(mfrow = c(2,3), mar = c(2,2,3,1), oma = c(0,0,2,0))
     
-    invisible(sapply(dimnames(s.mean.error)[[1]][c(3:5, 1:2)], function(varb) {
+    invisible(sapply(dimnames(ens.spread)[[1]][c(3:5, 1:2)], function(varb) {
         
         ens.cols <- c("goldenrod1", "chartreuse3", "cyan3")
         matplot(abind(ens.means, member.spread, pert.mean.rmse, ens.spread, along = 3)[varb,,],
@@ -125,7 +128,7 @@ pdf("./Plots/Superensemble RMSE vs spread.pdf"); {
                 lwd = c(rep(1, 6), rep(2, 2)),
                 type = "l", main = varb, xlab = "", ylab = "")
     }))
-    #type 2 = spread, tye 1 = rmse
+    #type 2 = spread, type 1 = rmse
     
     plot.new()
     legend("left", lty = c(1,1,1,1,NA,1,2), lwd = c(1,1,1,1,NA,2,2), col = c(ens.cols, rep("black", 4)), bty = "n",

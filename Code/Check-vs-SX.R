@@ -37,7 +37,7 @@ plot.rmse.spread(ukmo)
 # CHECKING AGAINST SICHUN DATA                                                                  ####
 
 # confirm that my calculations match those taken from Sichun's code
-source("./Code/sx-code-all-data.R")
+source("./Code/sx/sx-code-all-data.R")
 
 # observation series
 check.observations <- function() {
@@ -328,7 +328,7 @@ check.superens.rmse.spread()
 
 # COVARIANCE_Method1 for Lambda and Eta                                                         ####
 
-source("./Code/03-covariances-method-1.R")              # ~ 5mins to run
+source("./Code/sx/sx-covariances-method-1.R")              # ~ 5mins to run
 
 # common matrices
 {
@@ -416,7 +416,7 @@ source("./Code/03-covariances-method-1.R")              # ~ 5mins to run
 
 # COVARIANCE for temp only                                                                      ####
 
-source("./Code/04-covariances-for-temp-only.R")        # ~ 3 minutes
+source("./Code/sx/sx-covariances-for-temp-only.R")        # ~ 3 minutes
 
 # common matrices are run as above
 
@@ -483,7 +483,7 @@ source("./Code/04-covariances-for-temp-only.R")        # ~ 3 minutes
 
 # CRPS.R                                                                                        ####
 
-source("./Code/05-crps.R")
+source("./Code/sx/05-crps.R")
 
 ens.crps <- abind("ecmwf" = ensemble.crps(ecmwf[,,,,-1]),
                   "ncep" = ensemble.crps(ncep[,,,,-1]),

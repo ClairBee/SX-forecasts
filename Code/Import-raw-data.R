@@ -2,14 +2,7 @@
 library("CB.Misc"); library("SX.weather")
 kc <- 273.15
 
-# missing: UKMOctrl_mslp_timeseries.rda
-
-####################################################################################################
-
-# NOTES                                                                                         ####
-
-# why do perturbed & control forecasts of principal components start in different places?
-
+# import & rearrange all forecast data & observations
 
 ####################################################################################################
 

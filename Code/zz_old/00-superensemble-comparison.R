@@ -3,15 +3,8 @@ library("CB.Misc"); library("SX.weather")
 
 # comparison of models with 0, 2, 3 principal components
 
-    # tidy up code,, upload to GitHub.
-    # further metrics: histograms etc
-    # look at varying elements: what actually changes? (only S/precision, presumably)
-    # write something up, including comparison of S & Tau for each model (0,2,3 PCs)
-    # plot the calculated densities?
-
 # why is perturbation for PC2 done at different leadtime to PC1? (eg. see code for 05-crps.R)
 
-# try treating superensemble as superensemble, and fitting a single model. Difference?
 
 ####################################################################################################
 
