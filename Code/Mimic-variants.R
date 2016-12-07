@@ -721,5 +721,24 @@ pdf(paste0("./Plots/Mimic-vars/25d-Lambda-PIT-lt", lt-1, ".pdf"), height = 3); {
     plot.pit.hist("Historic")
 }; dev.off()
 
+####################################################################################################
+
+# IDENTIFYING ANALOGUES TO THE CURRENT FORECAST                                                 ####
+
+fc.all <- abind("ecmwf" = apply(offset.forecast(ecmwf)[1:2,,,,-1], 1:4, mean),
+            "ncep" = apply(offset.forecast(ncep)[1:2,,,,-1], 1:4, mean),
+            "ukmo" = apply(offset.forecast(ukmo)[1:2,,,,-1], 1:4, mean),
+            along = 0)
 
 
+# ideally, search for analogues that are similar in terms of current forecast & preceding weather
+# (may have to reserve preceding weather for prior on alpha/Gamma?)
+
+# consider analogues to day 5, year 1 only - longest leadtime
+fc <- fc.all[,,5,1,"14"]
+
+# look for analogues to each model's forecast, then average, or find analogue to average?
+# try individual analogues first (mainly to understand similarities & code)
+
+
+# Mahalanobis distance to single nearest forecast

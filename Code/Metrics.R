@@ -481,4 +481,34 @@ pdf("./Plots/Mimic-perf/Q-Q.pdf", height = 3, width = 7); {
     QQ("0"); QQ("5"); QQ("10"); QQ("14")
 }; dev.off()
 
+####################################################################################################
+
+# MULTIVARIATE PERFORMANCE                                                                      ####
+
+m.hist <- readRDS("./Models/lambda-hist.rds")
+
+# Box density ordinate transform
+{
+    # check calculation on single instance first
+    m <- m.hist$tau[,1,1]
+    s <- m.hist$s[,,1,1]
+    
+    o <- obs[,26,1]
+    
+    
+    1- dchisq(t(o-m) %*% solve(s) %*% (o-m), dim(m)[[1]])
+    
+    # now over array
+    mat <- abind("x" = aperm(apply(obs, 1, c), c(2,1))[1:2,26:630],
+                 "mu" = m.hist$tau[1:2,1,],
+                 "sig" = m.hist$s[1:2,1:2,1,],
+                 along = 1)
+    
+    bot <- apply(mat, 3, function(arr) {
+        1- dchisq(t(arr["x",] - arr["mu",]) %*% solve(arr[-c(1:2),]) %*% (arr["x",] - arr["mu",]), dim(arr)[[2]])
+    })
+    
+    hist(bot, breaks = "fd")
+}
+
 
