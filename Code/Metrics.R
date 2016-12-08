@@ -2,8 +2,6 @@
 library("SX.weather"); library("CB.Misc")
 require(ensembleMOS); require(ensembleBMA); require(mvtnorm)
 
-# would we get a better result from the Bayesian model if we fitted one variable at a time?
-
 bma.fc <- readRDS("./Data/ensBMA-fc.rds")
 mos.fc <- readRDS("./Data/ensMOS-fc.rds")
 fitted.bayes <- readRDS("./Data/fitted-0pc.rds")
