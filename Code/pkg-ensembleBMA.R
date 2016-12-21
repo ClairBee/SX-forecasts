@@ -121,6 +121,7 @@ library("SX.weather")
     verifRankHist( ensembleForecasts(srftData[use,]),
                    dataVerifObs(srftData[use,]))
 }
+
 ####################################################################################################
 
 # CONVERT OUR DATA TO SAME FORMAT                                                               ####
@@ -802,4 +803,71 @@ em.fit <- EM(sig2 = 1)
 plot.em(em.fit, xlim = c(0.6, 6))
 
 plot(bma.temps, temp.n, dates = "20071225", ask = F, xlim = c(0,6))
+
+####################################################################################################
+
+# BIAS-CORRECTION PLOTS                                                                         ####
+
+# where does the power of ensemble BMA come from? Suspect most of the benefit is from bias correction!
+
+fitted.bma <- readRDS("./Models/ensBMA-temps.rds")
+ens.data <- readRDS("./Models/Ens-data.rds")
+
+plot.bma.adj <- function(lt, d) {
+    
+    lt <- toString(lt)
+    
+    # find index of day specified
+    i <- which(array(1:630, dim = c(90,7)) == d + 24, arr.ind = T)
+    
+    px <- rbind("o" = obs[1:2,i[1],i[2]],
+                "ecmwf" = apply(offset.forecast(ecmwf)[1:2,i[1],i[2],lt,-1], 1, mean),
+                "ncep" = apply(offset.forecast(ncep)[1:2,i[1],i[2],lt,-1], 1, mean),
+                "ukmo" = apply(offset.forecast(ukmo)[1:2,i[1],i[2],lt,-1], 1, mean))
+    
+    bc <- rbind(o = c(0,1), t(fitted.bma[[lt]]$biasCoefs[,,d]))
+    adj <-  (bc[,1] + sweep(px, 1, bc[,2], "*"))[2:4,]
+   
+    w <- fitted.bma[[lt]]$weights[,d]
+    wm <- apply(sweep(adj, 1, w, "*"), 2, sum)
+    
+    qf <- quantileForecast(fitted.bma[[lt]], ens.data[[lt]], 0.5)[d + c(0,606),]
+    
+    plot(rbind(wm, qf, px, adj), pch = c(4, 0, 16, rep(c(16, 1), each = 3)), 
+         col = c(rep("black", 3), rep(c("red", "green3", "blue"), 2)),
+         main = paste0("Forecast adjustments - day ", d+24, ", LT ", lt))
+    
+    lines(rbind(px["ecmwf",], adj["ecmwf",], wm), col = "red", lty = 2)
+    lines(rbind(px["ncep",], adj["ncep",], wm), col = "green3", lty = 2)
+    lines(rbind(px["ukmo",], adj["ukmo",], wm), col = "blue", lty = 2)
+    lines(rbind(wm, px["o",]))
+}
+
+plot.bma.adj(14, 60)
+
+# how often is weighted mean closer to observation than single best BC forecast?
+# weighted mean further away => ensemble biased
+
+# how often is quantile forecast closer to observation than single best UNCORRECTED forecast?
+e <- aperm(array(abind(array(NA, dim = c(24, 2, 15)), 
+                       array(invisible(sapply(formatC(0:14), 
+                                              function(lt) quantileForecast(fitted.bma[[lt]], ens.data[[lt]], 0.5))),
+                             dim = c(606, 2, 15)), along = 1), dim = c(90,7,2, 15)), c(3,1,2,4))
+
+err <- abind("ecmwf" = forecast.errors(apply(ecmwf[,,,,-1], 1:4, mean))[1:2,,,],
+             "ncep" = forecast.errors(apply(ncep[,,,,-1], 1:4, mean))[1:2,,,],
+             "ukmo" = forecast.errors(apply(ukmo[,,,,-1], 1:4, mean))[1:2,,,],
+             "bma" = e, along = 0)
+
+err.dist <- apply(err, c(1, 3:5), function(v) sqrt(sum(v^2)))
+
+min.dist <- apply(err.dist, 2:4, which.min)
+(sum(min.dist == 4) / length(min.dist)) * 100
+
+####################################################################################################
+
+# VERIFICATION RANKS OF EACH ENSEMBLE                                                           ####
+
+# is there a bias trend over time? Plot TS of verification ranks to investigate. 
+
 

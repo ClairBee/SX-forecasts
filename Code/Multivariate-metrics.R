@@ -5,10 +5,7 @@ fitted <- readRDS("./Models/lambda-hist.rds")
 
 ####################################################################################################
 
-# CODE MULTIVARIATE RANK VERIFICATION HISTOGRAM
-# CODE BOX ORDINAL TRANSFORM?
-# CODE MULTIVARIATE PIT
-# CODE MST
+# CODE MULTIVARIATE RANK VERIFICATION HISTOGRAM?
 
 # ... AND APPLY ALL OF THE ABOVE TO THE BASE MODELS ALREADY FITTED
 # (maybe print some BW plots to avoid having to carry laptop?)
@@ -128,17 +125,35 @@ fitted <- readRDS("./Models/lambda-hist.rds")
 
 mv.crps.dens <- function(o, mu, sig, k = 10000) {
     
-    require(mvtnorm)            # needed to simulate from mimic
-    
-    x <- rmvnorm(k, mean = mu, sigma = sig)
-    
-    norm.1 <- mean(apply(t(x)-o, 2, function(v) sqrt(sum(v^2))))
-    norm.2 <- sum(apply(x[1:k-1,] - x[2:k,], 1, function(v) sqrt(sum(v^2)))) / (2 * (k-1))
+    if (length(mu) == 1) {
+        
+        x <- rnorm(k, mean = mu, sd = sqrt(sig))
+        
+        norm.1 <- mean(apply(t(x)-o, 2, function(v) sqrt(sum(v^2))))
+        norm.2 <- sum(sapply(x[1:k-1] - x[2:k], function(v) sqrt(sum(v^2)))) / (2 * (k-1))
+        
+    } else {
+        require(mvtnorm)            # needed to simulate from mimic
+        
+        x <- rmvnorm(k, mean = mu, sigma = sig)
+        
+        norm.1 <- mean(apply(t(x)-o, 2, function(v) sqrt(sum(v^2))))
+        norm.2 <- sum(apply(x[1:k-1,] - x[2:k,], 1, function(v) sqrt(sum(v^2)))) / (2 * (k-1))
+    }
     
     norm.1 - norm.2
 }
 
+mu <- fitted$tau[1,2,1]
+sig <- fitted$s[1,1,2,1]
+o <- obs[1,26,1]
+k <- 1000
+
+x <- rmvnorm(k, mean = mu, sigma = sig)
+x <- rnorm(k, mean = mu, sd = sqrt(sig))
+
 mv.crps.dens(obs[1:2,26,1], fitted$tau[1:2,2,1], fitted$s[1:2,1:2,2,1])
+mv.crps.dens(obs[1,26,1], fitted$tau[1,2,1], fitted$s[1,1,2,1])
 
 fudge <- abind("o" = array(t(apply(obs[1:2,,], 1, rbind))[,26:630], dim = c(2,1, 605)),
                "mu" = fitted$tau[1:2,2,,drop = F],
@@ -264,3 +279,168 @@ u.dev(verif.ranks(obs[1,,], offset.forecast(ukmo)[1,,,1,-1]))
 u.dev(verif.ranks(obs[2,,], offset.forecast(ukmo)[2,,,1,-1]))
 
 ####################################################################################################
+
+# TRENDS IN VERIFICATION RANK?                                                                  ####
+
+# think this occurs more because of change in NCEP processing in 2010
+
+vr <- abind("n" = abind("ecmwf" = invisible(sapply(1:15, 
+                                                   function(lt) verif.ranks(obs[1,,], offset.forecast(ecmwf)[1,,,lt,-1]))),
+                        "ncep" = invisible(sapply(1:15, 
+                                                  function(lt) verif.ranks(obs[1,,], offset.forecast(ncep)[1,,,lt,-1]))),
+                        "ukmo" = invisible(sapply(1:15, 
+                                                  function(lt) verif.ranks(obs[1,,], offset.forecast(ukmo)[1,,,lt,-1]))),
+                        along = 0),
+            "s" = abind("ecmwf" = invisible(sapply(1:15, 
+                                                   function(lt) verif.ranks(obs[2,,], offset.forecast(ecmwf)[2,,,lt,-1]))),
+                        "ncep" = invisible(sapply(1:15, 
+                                                  function(lt) verif.ranks(obs[2,,], offset.forecast(ncep)[2,,,lt,-1]))),
+                        "ukmo" = invisible(sapply(1:15, 
+                                                  function(lt) verif.ranks(obs[2,,], offset.forecast(ukmo)[2,,,lt,-1]))),
+                        along = 0),
+            along = 0)
+            
+plot(vr["n", "ecmwf", , 15], type = "l")
+lines(vr["s", "ecmwf", , 15], col = "blue")
+abline(line(vr["n", "ecmwf", , 15]), col = "red", lty = 2)
+abline(line(vr["s", "ecmwf", , 15]), col = "red", lty = 2)
+
+plot(vr["n", "ncep", , 15], type = "l")
+lines(vr["s", "ncep", , 15], col = "blue")
+abline(line(vr["n", "ncep", , 15]), col = "red", lty = 2)
+abline(line(vr["s", "ncep", , 15]), col = "red", lty = 2)
+
+plot(vr["n", "ukmo", , 15], type = "l")
+lines(vr["s", "ukmo", , 15], col = "blue")
+abline(line(vr["n", "ukmo", , 15]), col = "red", lty = 2)
+abline(line(vr["s", "ukmo", , 15]), col = "red", lty = 2)
+
+pdf("./Plots/Verif-hists-by-year-temp-ukmo.pdf", height = 28, width = 14); {
+    par(mfrow = c(15, 7), mar = c(2,2,3,1), oma = c(0,0,2,0))
+    
+    invisible(sapply(1:15, function(lt) {
+        invisible(sapply(1:7, function(y) {
+            vr.hist(obs[1,,y], offset.forecast(ukmo)[1,,y,lt,-1], border = NA,
+                    main = paste0("20", formatC(7:14, width = 2, flag = "0")[y], ", LT ", lt))
+            vr.hist(obs[2,,y], offset.forecast(ukmo)[2,,y,lt,-1], add = T, col = NA, border = "darkred",
+                    main = paste0("20", formatC(7:14, width = 2, flag = "0")[y], ", LT ", lt))
+        }))
+    }))
+    title("Rank of verification against UKMO ensemble", outer = T)
+}; dev.off()
+
+# yearly mean ranks
+vr.mean <- apply(array(vr, dim = c(2,3,90,7,15)), c(1:2,4:5), mean)
+
+pdf("./Plots/Verif-rank-by-year-temp-ecmwf.pdf", height = 28, width = 14); {
+    par(mfrow = c(15, 2), mar = c(2,2,3,1), oma = c(0,0,2,0))
+    
+    invisible(sapply(1:15, function(lt) {
+        plot(vr["n", "ecmwf", , lt], type = "l", xlab = "", ylab = "",
+             main = paste0("temp.n, leadtime ", lt))
+        abline(v = c(0:7) * 90, col = "cyan3", lty = 2)
+        lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+              rep(vr.mean[1, 1, , lt], each = 3),
+              col = "red", lty = 2, lwd = 2)
+        plot(vr["s", "ecmwf", , lt], type = "l", xlab = "", ylab = "", main = paste0("temp.s, leadtime ", lt))
+        abline(v = c(0:7) * 90, col = "cyan3", lty = 2)
+        lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+              rep(vr.mean[2, 1, , lt], each = 3),
+              col = "red", lty = 2, lwd = 2)
+    }))
+    title("Verification ranks for ECMWF", outer = T)
+}; dev.off()
+pdf("./Plots/Verif-rank-by-year-temp-ncep.pdf", height = 28, width = 14); {
+    par(mfrow = c(15, 2), mar = c(2,2,3,1), oma = c(0,0,2,0))
+    
+    invisible(sapply(1:15, function(lt) {
+        plot(vr["n", "ncep", , lt], type = "l", xlab = "", ylab = "", main = paste0("temp.n for NCEP, leadtime ", lt))
+        abline(v = c(0:7) * 90, col = "cyan3", lty = 2)
+        lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+              rep(vr.mean[1, 2, , lt], each = 3),
+              col = "red", lty = 2, lwd = 2)
+        plot(vr["s", "ncep", , lt], type = "l", xlab = "", ylab = "", main = paste0("temp.s for NCEP, leadtime ", lt))
+        abline(v = c(0:7) * 90, col = "cyan3", lty = 2)
+        lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+              rep(vr.mean[2, 2, , lt], each = 3),
+              col = "red", lty = 2, lwd = 2)
+    }))
+    title("Verification ranks for NCEP", outer = T)
+}; dev.off()
+pdf("./Plots/Verif-rank-by-year-temp-ukmo.pdf", height = 28, width = 14); {
+    par(mfrow = c(15, 2), mar = c(2,2,3,1), oma = c(0,0,2,0))
+    
+    invisible(sapply(1:15, function(lt) {
+        plot(vr["n", "ukmo", , lt], type = "l", xlab = "", ylab = "", main = paste0("temp.n for UKMO, leadtime ", lt))
+        abline(v = c(0:7) * 90, col = "cyan3", lty = 2)
+        lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+              rep(vr.mean[1, 3, , lt], each = 3),
+              col = "red", lty = 2, lwd = 2)
+        plot(vr["s", "ukmo", , lt], type = "l", xlab = "", ylab = "", main = paste0("temp.s for UKMO, leadtime ", lt))
+        abline(v = c(0:7) * 90, col = "cyan3", lty = 2)
+        lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+              rep(vr.mean[2, 3, , lt], each = 3),
+              col = "red", lty = 2, lwd = 2)
+    }))
+    title("Verification ranks for UKMO", outer = T)
+}; dev.off()
+
+err <- abind("ecmwf" = apply(forecast.errors(ecmwf)[,,,,-1], 1:4, mean),
+             "ncep" = apply(forecast.errors(ncep)[,,,,-1], 1:4, mean),
+             "ukmo" = apply(forecast.errors(ukmo)[,,,,-1], 1:4, mean),
+             along = 0)[,1:2,,,]
+err.mean <- apply(err, c(1:2, 4:5), mean)
+err <- array(err, dim = c(3,2,630,15))
+    
+ens.cols <- c("red", "green3", "blue")
+pdf("./Plots/FC-error-by-year.pdf", height = 4*15, width = 10); {
+    
+    par(mfrow = c(15, 2), mar = c(2,2,3,1), oma = c(0,0,2,0))
+    
+    invisible(sapply(1:15, function(lt) {
+        invisible(sapply(1:2, function(varb) {
+            matplot(t(err[,varb,,lt]), type = "l", lty = 1, col = adjustcolor(ens.cols, alpha = 0.5),
+                    xlab = "", ylab = "", ylim = range(err),
+                    main = paste0(c("temp.n", "temp.s")[varb], " - leadtime ", lt-1))
+            abline(h = 0, lty = 2)
+            abline(v = (0:7)*90, lty = 2)
+            invisible(sapply(1:3, function(ens) {
+                lines(c(rbind(90*(0:6), 90*(1:7), NA)), 
+                      rep(err.mean[ens, varb, , lt], each = 3),
+                      col = ens.cols[ens], lty = 2, lwd = 2)
+            }))
+        }))
+    }))
+    title("Forecast error over study period", outer = T)
+}; dev.off()
+
+
+
+####################################################################################################
+
+####################################################################################################
+
+# BOX DENSITY ORDINATE TRANSFORM                                                                ####
+
+# u = 1 - P(f(x) <= f(o))                               # generally
+# u = 1 - chisq(d, (o-mu)' S^-1 (o-mu))                 # MVN case
+lt <- "0"
+
+box.dot <- function(o, mu, s) {
+    
+    1 - pchisq(t(o - mu) %*% solve(s) %*% (o-mu), length(mu))
+    
+}
+
+####################################################################################################
+
+# TEST AUTOMATED FUNCTIONS (NOW ADDED TO PACKAGE)                                               ####
+
+# energy score over multivariate & univariate ensembles
+fitted <- readRDS("./Models/lambda-hist.rds")
+
+uv.fitted <- es.crps(o = obs[1,90,7], mu = fitted$tau[1,1,605], sig = fitted$s[1,1,1,605])
+mv.fitted <- es.crps(o = obs[1:2,90,7], mu = fitted$tau[1:2,1,605], sig = fitted$s[1:2,1:2,1,605])
+
+uv.ens <- es.crps(o = obs[1,90,7], efc = offset.forecast(ecmwf)[1,90,7,1,-1])
+mv.ens <- es.crps(o = obs[1:2,90,7], efc = offset.forecast(ecmwf)[1:2,90,7,1,-1])
