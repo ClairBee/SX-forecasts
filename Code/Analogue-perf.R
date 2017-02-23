@@ -420,7 +420,7 @@ pdf("../Plots/Analogue-perf/VR-hists.pdf", height = 4, width = 9); {
 
 # simulate from mimic & use to obtain verification ranks
 require(mvtnorm)
-mim.sim <- aaply(mimic[-1,,,1:2,1:3], 1:3, function(mim) rmvnorm(1000, mu = mim[,"Tau"], sigma = mim[,-1]))
+mim.sim <- aaply(mimic[-1,,,1:2,1:3], 1:3, function(mim) rmvnorm(1000, mean = mim[,"Tau"], sigma = mim[,-1]))
 vr.mim <- aaply(aperm(mim.sim, c(5,1:4)), 4, function(ens) {
     apply(abind(obs[1:2,-1,], ens), 1:3, function(v) which(sort(v) == v[1]))})
 dimnames(vr.mim)[[2]] <- dimnames(obs)[[1]][1:2]
@@ -588,7 +588,7 @@ pdf("../Plots/Analogue-perf/Brier-scores-all-temps.pdf", height = 4, width = 9);
 
     # deviation from uniformity
     {
-        hist.sim <- aaply(mimic.hist[,,1:2,1:3], 1:2, function(mim) rmvnorm(1000, mu = mim[,"Tau"], sigma = mim[,-1]))
+        hist.sim <- aaply(mimic.hist[,,1:2,1:3], 1:2, function(mim) rmvnorm(1000, mean = mim[,"Tau"], sigma = mim[,-1]))
         
         vr.mim <- aaply(aperm(mim.sim, c(5,1:4)), 4, function(ens) {
             apply(abind(obs[1:2,-1,], ens), 1:3, function(v) which(sort(v) == v[1]))})
@@ -605,7 +605,6 @@ pdf("../Plots/Analogue-perf/Brier-scores-all-temps.pdf", height = 4, width = 9);
     {
         sk <- abind(sk, "mimic.hist" = apply(vr.hist, 1:2, skewness), along = 1)
     }
-
 }
 
 l.cols <- c("black", "blue", "red3", "grey"); l.wd <- c(2,1,1,1); l.ty <- c(1,1,1,2)
