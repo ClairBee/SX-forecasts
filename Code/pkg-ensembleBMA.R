@@ -182,7 +182,7 @@ temp.n.param <- modelParameters(temp.n.fit)
 
 tr <- 25            # length of training set
 lt <- "5"             # leadtime
-timestamps <- gsub("-", "", as.Date(load.data("./Data/ECMWF_europe_starttime.rda")[16:105,1:7]/ 24, "1800-01-01"))
+timestamps <- gsub("-", "", as.Date(load.data("../Data/ECMWF_europe_starttime.rda")[16:105,1:7]/ 24, "1800-01-01"))
 
 fc.temps <- function(model, lt) {
     c(apply(apply(offset.forecast(model[1:2,,,,-1]), 1:4, mean)[,,,toString(lt)], 1, cbind))
