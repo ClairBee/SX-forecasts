@@ -689,10 +689,10 @@ lt <- "3"           # leadtime
 }
 
 # simplest case: single variable, single day
-o <- obs[1,1:25,1]
-fc <- abind("ecmwf" = apply(offset.forecast(ecmwf)[1,1:25,1,lt,-1], 1, mean),
-               "ncep" = apply(offset.forecast(ncep)[1,1:25,1,lt,-1], 1, mean),
-               "ukmo" = apply(offset.forecast(ukmo)[1,1:25,1,lt,-1], 1, mean),
+o <- obs[1,d-(24:0),y]
+fc <- abind("ecmwf" = apply(offset.forecast(ecmwf)[1,d-(24:0),y,lt,-1], 1, mean),
+               "ncep" = apply(offset.forecast(ncep)[1,d-(24:0),y,lt,-1], 1, mean),
+               "ukmo" = apply(offset.forecast(ukmo)[1,d-(24:0),y,lt,-1], 1, mean),
             along = 0)
 
 # linear regression over training data
